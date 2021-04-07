@@ -7,26 +7,16 @@
  */
 
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {View} from 'react-native';
 
-import Home from './screen/HomeScreen'
+import StateView from './View/StateView.js';
 
 const App = () => {
   return (
-    <View style={{flex:1}}>
-      <Home />
+    <View style={{flex: 1}}>
+      <StateView />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  
-});
 
 export default App;

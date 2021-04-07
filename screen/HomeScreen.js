@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 
 import {
   StyleSheet,
@@ -9,29 +9,30 @@ import {
   TouchableOpacity,
   Picker,
 } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
 import axios from 'axios';
+import {StateContext} from '../context/state-context.js';
 
 const HomeScreen = () => {
-  const [stateDetail, setStateDetail] = useState({});
+  const [state, dispatch] = useContext(StateContext);
   const [isFailure, setIsFailure] = useState(false);
-  const [isLoading, setLoading] = useState(true);
-  const [stateWise, setStateWise] = useState([]);
+  const [isLoading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState('Total');
 
   useEffect(() => {
     requestDetailAPI();
   }, []);
 
-  const requestDetailAPI = async () => {
+  const requestDetailAPI = () => {
     setLoading(true);
     setIsFailure(false);
-    await axios
+    axios
       .get('https://api.covid19india.org/data.json')
       .then(function (response) {
         const data = response.data.statewise;
-        setStateWise(data);
-        setStateDetail(data.find(item => item.state == 'Total'));
+        dispatch({
+          type: 'STATE_WISE',
+          payload: data,
+        });
         setLoading(false);
       })
       .catch(function (error) {
@@ -43,11 +44,11 @@ const HomeScreen = () => {
 
   const onChange = value => {
     setSelectedItem(value);
-    const res = stateWise.find(item => item.state == value);
-    setStateDetail(res);
+    dispatch({
+      type: 'STATE_DETAIL',
+      payload: value,
+    });
   };
-
-  const options = stateWise.map(item => item.state);
 
   const renderDetailContent = () => {
     if (isLoading) {
@@ -79,31 +80,44 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
       );
-    } else if (!isFailure) {
+    } else if (
+      state.stateWise &&
+      state.stateWise.length &&
+      state.stateDetail.state
+    ) {
       return (
         <View style={styles.bottomContainer}>
           <Text style={styles.dateStyle}>
-            As on {stateDetail.lastupdatedtime}
+            As on {state.stateDetail.lastupdatedtime}
           </Text>
           <View style={styles.listContainer}>
             <Text style={styles.statusTextStyle}>Confirmed</Text>
-            <Text style={styles.statusTextStyle}>{stateDetail.confirmed}</Text>
+            <Text style={styles.statusTextStyle}>
+              {state.stateDetail.confirmed}
+            </Text>
           </View>
           <View style={styles.listContainer}>
             <Text style={styles.statusTextStyle}>Active</Text>
-            <Text style={styles.statusTextStyle}>{stateDetail.active}</Text>
+            <Text style={styles.statusTextStyle}>
+              {state.stateDetail.active}
+            </Text>
           </View>
           <View style={styles.listContainer}>
             <Text style={styles.statusTextStyle}>Recovered</Text>
-            <Text style={styles.statusTextStyle}>{stateDetail.recovered}</Text>
+            <Text style={styles.statusTextStyle}>
+              {state.stateDetail.recovered}
+            </Text>
           </View>
           <View style={styles.listContainer}>
             <Text style={styles.statusTextStyle}>Death</Text>
-            <Text style={styles.statusTextStyle}>{stateDetail.deaths}</Text>
+            <Text style={styles.statusTextStyle}>
+              {state.stateDetail.deaths}
+            </Text>
           </View>
         </View>
       );
     }
+    return <Text>No data found</Text>;
   };
 
   return (
@@ -121,7 +135,7 @@ const HomeScreen = () => {
               }}
               selectedValue={selectedItem}
               onValueChange={item => onChange(item)}>
-              {options.map(value => (
+              {state.options.map(value => (
                 <Picker.Item label={value} value={value} />
               ))}
             </Picker>
@@ -167,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: '#FFFFFF',
-    elevation:10,
+    elevation: 10,
   },
   dateStyle: {
     textAlign: 'center',
